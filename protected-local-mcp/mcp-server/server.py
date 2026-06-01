@@ -18,6 +18,7 @@ MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://localhost:8000")
 
 
 # tag::token-verifier
+
 class FusionAuthTokenVerifier(TokenVerifier):
     """Verifies tokens using the FusionAuth JWT validation endpoint."""
 
