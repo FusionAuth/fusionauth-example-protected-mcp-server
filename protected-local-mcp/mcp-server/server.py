@@ -16,12 +16,10 @@ FUSIONAUTH_EXTERNAL_URL = os.environ.get("FUSIONAUTH_EXTERNAL_URL", "http://loca
 MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://localhost:8000")
 # end::imports
 
-# abc
-
 # tag::token-verifier
-
+#
 class FusionAuthTokenVerifier(TokenVerifier):
-    """Verifies tokens using the FusionAuth JWT validation endpoint DAN."""
+    """Verifies tokens using the FusionAuth JWT validation endpoint."""
 
     def __init__(
         self,
