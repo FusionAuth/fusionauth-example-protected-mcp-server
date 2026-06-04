@@ -67,38 +67,36 @@ def create_scope(client: FusionAuthClient, app_id: str) -> None:
 
 # tag::create-client-application
 def create_client_application(
-    client: FusionAuthClient, client_name: str, port: int, connector_ui: bool = False
+    client: FusionAuthClient, client_name: str, port: int, mcp_server_url: str
 ) -> "dict | None":
     """Create an OAuth application in FusionAuth for an MCP client."""
     app_id = str(uuid.uuid4())
 
-    if connector_ui:
-        redirect_urls = [CONNECTOR_UI_REDIRECT_URL]
-        pkce_policy = "NotRequired"
-        client_auth_policy = "Required"
-        require_client_auth = True
-    else:
-        redirect_urls = [
-            f"http://localhost:{port}/oauth/callback",
-            f"http://127.0.0.1:{port}/oauth/callback",
-            f"http://localhost:{port}/callback",
-            f"http://127.0.0.1:{port}/callback",
-        ]
-        pkce_policy = "Required"
-        client_auth_policy = "NotRequiredWhenUsingPKCE"
-        require_client_auth = False
+    relationship = "ThirdParty"
+
+    redirect_urls = [
+        f"http://localhost:{port}/oauth/callback",
+        f"http://127.0.0.1:{port}/oauth/callback",
+        f"http://localhost:{port}/callback",
+        f"http://127.0.0.1:{port}/callback",
+    ]
+    pkce_policy = "Required"
+    client_auth_policy = "NotRequiredWhenUsingPKCE"
+    require_client_auth = False
 
     response = client.create_application({
         "application": {
             "name": client_name,
             "oauthConfiguration": {
                 "authorizedRedirectURLs": redirect_urls,
+                "authorizedResourceUris": [mcp_server_url+"/mcp"],
                 "authorizedURLValidationPolicy": "ExactMatch",
                 "clientAuthenticationPolicy": client_auth_policy,
                 "enabledGrants": ["authorization_code", "refresh_token"],
                 "generateRefreshTokens": True,
                 "proofKeyForCodeExchangePolicy": pkce_policy,
                 "requireClientAuthentication": require_client_auth,
+                "relationship": relationship,
                 "scopeHandlingPolicy": "Strict",
             },
         }
@@ -110,8 +108,6 @@ def create_client_application(
             "name": client_name,
             "client_id": app_data["id"],
         }
-        if connector_ui:
-            result["client_secret"] = app_data["oauthConfiguration"]["clientSecret"]
         return result
     else:
         print(f"  Failed to create {client_name}: {response.status}")
@@ -129,10 +125,12 @@ def print_mcp_config(client_name: str, client_id: str, mcp_server_url: str, port
         print(f"\n  Enter these values in Settings -> Connectors in Claude Desktop or claude.ai.")
         return
 
-    args = ["mcp-remote", f"{mcp_server_url}/mcp", str(port)]
+    args = ["mcp-remote@0.1.37", f"{mcp_server_url}/mcp", str(port)]
     if mcp_server_url.startswith("http://"):
         args.append("--allow-http")
-    args += ["--static-oauth-client-info", f'{{"client_id":"{client_id}"}}']
+
+    scope_str = "openid profile get_name"
+    args += ["--static-oauth-client-info", f'{{"client_id":"{client_id}","scope":"{scope_str}"}}']
 
     config = {
         "mcpServers": {
@@ -172,11 +170,6 @@ def main():
         default=DEFAULT_PORT,
         help=f"OAuth callback port for mcp-remote (default: {DEFAULT_PORT}). Change this if port {DEFAULT_PORT} is already in use on your machine.",
     )
-    parser.add_argument(
-        "--connector-ui",
-        action="store_true",
-        help="Register for the Claude Desktop or claude.ai connector UI (uses https://claude.ai/api/mcp/auth_callback as redirect URL and outputs client secret)",
-    )
     args = parser.parse_args()
 
     client = FusionAuthClient(args.api_key, args.fusionauth_url)
@@ -198,7 +191,7 @@ def main():
         sys.exit(0)
 
     print(f"\n  Creating {client_name}...")
-    result = create_client_application(client, client_name, args.port, args.connector_ui)
+    result = create_client_application(client, client_name, args.port, args.mcp_server_url)
 
     if result:
         print(f"  Created {result['name']} (Client Id: {result['client_id']})")
