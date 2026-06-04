@@ -67,10 +67,12 @@ def create_scope(client: FusionAuthClient, app_id: str) -> None:
 
 # tag::create-client-application
 def create_client_application(
-    client: FusionAuthClient, client_name: str, port: int, connector_ui: bool = False
+    client: FusionAuthClient, client_name: str, port: int, mcp_server_url: str, connector_ui: bool = False 
 ) -> "dict | None":
     """Create an OAuth application in FusionAuth for an MCP client."""
     app_id = str(uuid.uuid4())
+
+    relationship = "ThirdParty"
 
     if connector_ui:
         redirect_urls = [CONNECTOR_UI_REDIRECT_URL]
@@ -93,12 +95,14 @@ def create_client_application(
             "name": client_name,
             "oauthConfiguration": {
                 "authorizedRedirectURLs": redirect_urls,
+                "authorizedResourceUris": [mcp_server_url+"/mcp"],
                 "authorizedURLValidationPolicy": "ExactMatch",
                 "clientAuthenticationPolicy": client_auth_policy,
                 "enabledGrants": ["authorization_code", "refresh_token"],
                 "generateRefreshTokens": True,
                 "proofKeyForCodeExchangePolicy": pkce_policy,
                 "requireClientAuthentication": require_client_auth,
+                "relationship": relationship,
                 "scopeHandlingPolicy": "Strict",
             },
         }
@@ -129,10 +133,12 @@ def print_mcp_config(client_name: str, client_id: str, mcp_server_url: str, port
         print(f"\n  Enter these values in Settings -> Connectors in Claude Desktop or claude.ai.")
         return
 
-    args = ["mcp-remote", f"{mcp_server_url}/mcp", str(port)]
+    args = ["mcp-remote@0.1.37", f"{mcp_server_url}/mcp", str(port)]
     if mcp_server_url.startswith("http://"):
         args.append("--allow-http")
-    args += ["--static-oauth-client-info", f'{{"client_id":"{client_id}"}}']
+
+    scope_str = "openid profile get_name"
+    args += ["--static-oauth-client-info", f'{{"client_id":"{client_id}","scope":"{scope_str}"}}']
 
     config = {
         "mcpServers": {
@@ -198,7 +204,7 @@ def main():
         sys.exit(0)
 
     print(f"\n  Creating {client_name}...")
-    result = create_client_application(client, client_name, args.port, args.connector_ui)
+    result = create_client_application(client, client_name, args.port, args.mcp_server_url, args.connector_ui)
 
     if result:
         print(f"  Created {result['name']} (Client Id: {result['client_id']})")
