@@ -67,28 +67,22 @@ def create_scope(client: FusionAuthClient, app_id: str) -> None:
 
 # tag::create-client-application
 def create_client_application(
-    client: FusionAuthClient, client_name: str, port: int, mcp_server_url: str, connector_ui: bool = False 
+    client: FusionAuthClient, client_name: str, port: int, mcp_server_url: str
 ) -> "dict | None":
     """Create an OAuth application in FusionAuth for an MCP client."""
     app_id = str(uuid.uuid4())
 
     relationship = "ThirdParty"
 
-    if connector_ui:
-        redirect_urls = [CONNECTOR_UI_REDIRECT_URL]
-        pkce_policy = "NotRequired"
-        client_auth_policy = "Required"
-        require_client_auth = True
-    else:
-        redirect_urls = [
-            f"http://localhost:{port}/oauth/callback",
-            f"http://127.0.0.1:{port}/oauth/callback",
-            f"http://localhost:{port}/callback",
-            f"http://127.0.0.1:{port}/callback",
-        ]
-        pkce_policy = "Required"
-        client_auth_policy = "NotRequiredWhenUsingPKCE"
-        require_client_auth = False
+    redirect_urls = [
+        f"http://localhost:{port}/oauth/callback",
+        f"http://127.0.0.1:{port}/oauth/callback",
+        f"http://localhost:{port}/callback",
+        f"http://127.0.0.1:{port}/callback",
+    ]
+    pkce_policy = "Required"
+    client_auth_policy = "NotRequiredWhenUsingPKCE"
+    require_client_auth = False
 
     response = client.create_application({
         "application": {
@@ -114,8 +108,6 @@ def create_client_application(
             "name": client_name,
             "client_id": app_data["id"],
         }
-        if connector_ui:
-            result["client_secret"] = app_data["oauthConfiguration"]["clientSecret"]
         return result
     else:
         print(f"  Failed to create {client_name}: {response.status}")
@@ -178,11 +170,6 @@ def main():
         default=DEFAULT_PORT,
         help=f"OAuth callback port for mcp-remote (default: {DEFAULT_PORT}). Change this if port {DEFAULT_PORT} is already in use on your machine.",
     )
-    parser.add_argument(
-        "--connector-ui",
-        action="store_true",
-        help="Register for the Claude Desktop or claude.ai connector UI (uses https://claude.ai/api/mcp/auth_callback as redirect URL and outputs client secret)",
-    )
     args = parser.parse_args()
 
     client = FusionAuthClient(args.api_key, args.fusionauth_url)
@@ -204,7 +191,7 @@ def main():
         sys.exit(0)
 
     print(f"\n  Creating {client_name}...")
-    result = create_client_application(client, client_name, args.port, args.mcp_server_url, args.connector_ui)
+    result = create_client_application(client, client_name, args.port, args.mcp_server_url)
 
     if result:
         print(f"  Created {result['name']} (Client Id: {result['client_id']})")
