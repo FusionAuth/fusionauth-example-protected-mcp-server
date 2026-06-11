@@ -17,7 +17,7 @@ def get_name() -> str:
     """Get a greeting with a name.
 
     This is a simple tool that returns a hardcoded greeting.
-    In the tutorial, we'll add OAuth authentication so this tool
+    In the guide, we'll add OAuth authentication so this tool
     returns the authenticated user's name from FusionAuth.
     """
     return "Hello, World!"
