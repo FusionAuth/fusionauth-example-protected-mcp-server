@@ -1,6 +1,11 @@
 # FusionAuth Protected MCP Server
 
-Example code for a MCP server tutorial using FusionAuth. Please visit https://fusionauth.io/docs/extend/examples/protecting-mcp-servers for the tutorial
+<!-- Source: FusionAuth/fusionauth-example-protected-mcp-server at bb504dbcc636c22ae42b41a3feeb6679b83bd2d9. Runtime and support files retained; documentation adds Bluehawk markers, this provenance, a generated-source warning, and the corrected tutorial URL. -->
+
+> [!WARNING]
+> This repository is generated from [fusionauth-site](https://github.com/FusionAuth/fusionauth-site/tree/main/astro/extractedcode/example-protected-mcp-server). Changes here will be overwritten. Submit changes to fusionauth-site instead.
+
+Example code for a MCP server tutorial using FusionAuth. Please visit https://fusionauth.io/docs/extend/examples/controlling-access-mcp-server for the tutorial
 
 This repository contains self-contained examples:
 
